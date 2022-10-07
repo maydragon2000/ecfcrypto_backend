@@ -6,13 +6,21 @@ const api = axios.create({
     method: 'GET',
     baseURL: 'https://pro-api.coinmarketcap.com',
     headers: {
-        'X-CMC_PRO_API_KEY': `2e6b8ca7-1b5e-4108-9ccf-4ed04712b1c7`,
+        'X-CMC_PRO_API_KEY': `87aee1d8-abf9-4016-96a9-b861d10325c1`,
         Accept: 'application/json',
         'Accept-Encoding': 'deflate, gzip',
     },
 });
 router.get("/getcoins", (req, res) => {
     api('/v1/cryptocurrency/listings/latest?limit=20')
+        .then(response => response.data)
+        .then(value => res.json(value.data))
+        .catch(err => console.log(err));
+});
+
+router.post("/getcoins", (req, res) => {
+    console.log(req.body, "req")
+    api(`/v1/cryptocurrency/listings/latest?limit=${req.body.marketDataCount}`)
         .then(response => response.data)
         .then(value => res.json(value.data))
         .catch(err => console.log(err));
@@ -28,6 +36,7 @@ router.get("/getcoindetail/:coin", (req, res) => {
         });
 });
 router.get("/getMainCoin", (req, res) => {
+    console.log("here");
     api(`/v1/cryptocurrency/quotes/latest?symbol=btc,bnb,eth,xrp,ADA,SOL,MATIC,LTC`)
         .then(function (response) {
             res.json(response.data);

@@ -4,8 +4,8 @@ const bodyParser = require("body-parser");
 const passport = require("passport");
 const users = require("./routes/api/users");
 const cryptoCurrency = require("./routes/api/cryptoCurrency");
-const watchlist = require("./routes/api/watchlist");
 const wallet = require("./routes/api/wallet");
+const email = require("./routes/api/email");
 const cors = require("cors");
 const path = require("path");
 // const whitelist = ['http://localhost:3000'];
@@ -48,8 +48,8 @@ require("./config/passport")(passport);
 // Routes
 app.use("/api/users", users);
 app.use("/api/cryptocurrency", cryptoCurrency);
-app.use("/api/watchlist", watchlist);
 app.use("/api/wallet", wallet);
+app.use("/api/email", email);
 // app.use("*", (req, res) => {
 //     res.sendFile(path.join(__dirname, 'public'))
 // })

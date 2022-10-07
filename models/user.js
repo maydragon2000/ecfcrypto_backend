@@ -6,15 +6,7 @@ const UserSchema = new Schema({
         type: String,
         required: true
     },
-    firstName: {
-        type: String,
-        required: false
-    },
-    lastName: {
-        type: String,
-        required: false
-    },
-    displayName: {
+    full_name: {
         type: String,
         required: false
     },
@@ -37,6 +29,46 @@ const UserSchema = new Schema({
     recoveryPhrase: {
         type: Array,
         required: false
+    },
+    address: {
+        type: String,
+        required: false
+    },
+    birthday: {
+        type: String,
+        required: false
+    },
+    city: {
+        type: String,
+        required: false
+    },
+    country: {
+        type: String,
+        required: false
+    },
+    region: {
+        type: String,
+        required: false
+    },
+    zip_code: {
+        type: String,
+        required: false
+    },
+    id_front_image: {
+        type: String,
+        required: false
+    },
+    id_back_image: {
+        type: String,
+        required: false
+    },
+    real_photo: {
+        type: String,
+        required: false
+    },
+    permission:{
+        type:String,
+        required:true,
     },
     date: {
         type: Date,

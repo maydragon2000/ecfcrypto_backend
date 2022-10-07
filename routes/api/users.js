@@ -6,14 +6,27 @@ const keys = require("../../config/keys");
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 let path = require('path');
+const fs = require('fs');
+const nodemailer = require('nodemailer')
+const sendGridTransport = require('nodemailer-sendgrid-transport');
+const {SENDGRID_API} = require('../../config/keys');
 // Load User model
 const User = require("../../models/user");
+const Wallet = require("../../models/wallet")
 // @route POST api/users/register
 // @desc Register user
 // @access Public
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/images');
+        const folderName = 'public';
+        try {
+            if (!fs.existsSync(folderName)) {
+              fs.mkdirSync(folderName);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        cb(null, 'public');
     },
     filename: function (req, file, cb) {
         cb(null, uuidv4() + '-' + Date.now() + path.extname(file.originalname));
@@ -31,8 +44,18 @@ const fileFilter = (req, file, cb) => {
 
 let upload = multer({ storage, fileFilter });
 
+const idUpload = upload.fields([{name:'idFrontImage', maxCount:1}, {name:'idBackImage', maxCount:1}, {name:'realPhoto', maxCount:1}])
 
-router.post("/register", (req, res) => {
+const transporter = nodemailer.createTransport(sendGridTransport(
+    {
+        auth:{
+            api_key:SENDGRID_API
+        }
+    })
+);
+
+router.post("/register", idUpload, (req, res) => {
+    console.log(req.body.address, "req register");
     User.findOne({ name: req.body.userName }).then(user => {
         if (user) {
             return res.status(400).json({ name: "userName already exists" });
@@ -40,13 +63,65 @@ router.post("/register", (req, res) => {
             const newUser = new User({
                 name: req.body.userName,
                 password: req.body.password,
-                recoveryPhrase: req.body.recoveryPhrase,
-                firstName: "",
-                lastName: "",
-                displayName: "",
-                email: "",
-                phoneNumber: ""
+                recoveryPhrase: JSON.parse(req.body.recoveryPhrase),
+                full_name: req.body.fullName,
+                email: req.body.email,
+                phoneNumber: "",
+                address: req.body.address,
+                birthday: req.body.birthday,
+                city: req.body.city,
+                country: req.body.country,
+                region: req.body.region,
+                zip_code: req.body.zipCode,
+                id_front_image: req.files.idFrontImage[0].filename,
+                id_back_image: req.files.idBackImage[0].filename,
+                real_photo: req.files.realPhoto[0].filename,
+                permission:"0"
             });
+            transporter.sendMail(
+                {
+                    to:"helpdesk@ecfcrypto.com",
+                    from: 'no-reply@ecfcrypto.com',
+                    subject:"ECF CRYPTO New User",
+                    replyTo:"no-reply@ecfcrypto.com",
+                    html:`
+                    <div style="color:#757575 !important">
+                    <h1 style="text-align:center">ECF Crypto</h1>
+                    <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                    font-size: 16px;
+                    color: #757575;
+                    line-height: 150%;
+                    letter-spacing: normal;">Hello Admin.</p>
+                    <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                    font-size: 16px;
+                    color: #757575;
+                    line-height: 150%;
+                    letter-spacing: normal;">New user ${newUser.name} came and Signed Up.</p>
+                    <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                    font-size: 16px;
+                    color: #757575;
+                    line-height: 150%;
+                    letter-spacing: normal;">Please check new user's ID.</p>
+                    <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                    font-size: 16px;
+                    color: #757575;
+                    line-height: 150%;
+                    <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                    font-size: 16px;
+                    color: #757575;
+                    line-height: 150%;
+                    letter-spacing: normal;">Best regards,</p>
+                    <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                    font-size: 16px;
+                    color: #757575;
+                    line-height: 150%;
+                    letter-spacing: normal;">ECF Crypto team</p>
+                    </div>
+                    `
+                }
+            ).catch(err => {
+                console.log(err)
+            })
             // Hash password before saving in database
             bcrypt.genSalt(10, (err, salt) => {
                 bcrypt.hash(newUser.password, salt, (err, hash) => {
@@ -67,6 +142,13 @@ router.post("/register", (req, res) => {
 router.post("/login", (req, res) => {
     const name = req.body.userName;
     const password = req.body.password;
+
+    if(name === "Admin" && password === "gA_8qr3aV)%7(;Q"){
+        return res
+            .status(201)
+            .json({ admin: "admin" });
+
+    }
     // Find user by email
     User.findOne({ name: name }).then(user => {
         // Check if user exists
@@ -78,31 +160,41 @@ router.post("/login", (req, res) => {
             if (isMatch) {
                 // User matched
                 // Create JWT Payload
-                const payload = {
-                    id: user.id,
-                    name: user.name,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    displayName: user.displayName,
-                    email: user.email,
-                    phoneNumber: user.phoneNumber,
-                    image: user.image,
-                    date: user.date,
-                };
-                // Sign token
-                jwt.sign(
-                    payload,
-                    keys.secretOrKey,
-                    {
-                        expiresIn: 31556926 // 1 year in seconds
-                    },
-                    (err, token) => {
-                        res.json({
-                            success: true,
-                            token: "Bearer " + token
-                        });
-                    }
-                );
+                if(user.permission === "0"){
+                    return res
+                    .status(401)
+                    .json({ checking: "checking" });
+                } else if (user.permission === "2"){
+                    return res
+                    .status(402)
+                    .json({ disabled: "disabled" });
+                } else {
+                    const payload = {
+                        id: user.id,
+                        name: user.name,
+                        fullName: user.full_name,
+                        email: user.email,
+                        phoneNumber: user.phoneNumber,
+                        image: user.image,
+                        date: user.date,
+                        country:user.country,
+                        city:user.city
+                    };
+                    // Sign token
+                    jwt.sign(
+                        payload,
+                        keys.secretOrKey,
+                        {
+                            expiresIn: 31556926 // 1 year in seconds
+                        },
+                        (err, token) => {
+                            res.status(200).json({
+                                success: true,
+                                token: "Bearer " + token
+                            });
+                        }
+                    );  
+                }
             } else {
                 return res
                     .status(400)
@@ -126,7 +218,7 @@ router.post("/recoveryphrase", (req, res) => {
                     return u === user.recoveryPhrase[i];
                 })) {
 
-                return res.status(200).json({ name: user.name });
+                return res.status(200).json({ name: user.name });   
             } else {
                 return res.status(400).json({ recoveryPhraseIncorrect: "recoveryPhrase incorrect" });
             }
@@ -152,18 +244,18 @@ router.post("/resetPassword", (req, res) => {
 router.post("/resetuser", (req, res) => {
     const name = req.body.userName;
     User.findOne({ name: name }).then(user => {
-        user.firstName = req.body.firstName;
-        user.lastName = req.body.lastName;
-        user.displayName = req.body.displayName;
+        user.full_name = req.body.fullName;
+        user.city = req.body.city;
+        user.country = req.body.country;
         user.email = req.body.email;
         user.phoneNumber = req.body.phoneNumber;
         user.save().then(() => {
             const payload = {
                 id: user.id,
                 name: user.name,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                displayName: user.displayName,
+                fullName: user.full_name,
+                city: user.city,
+                country: user.country,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
                 image: user.image,
@@ -186,6 +278,7 @@ router.post("/resetuser", (req, res) => {
         }).catch((err) => { handleErr(err) })
     })
 })
+
 router.post("/changePassword", (req, res) => {
     const name = req.body.userName;
     const oldPassword = req.body.oldPassword;
@@ -211,8 +304,6 @@ router.post("/changePassword", (req, res) => {
                     .json({ passwordincorrect: "Current Password incorrect" });
             }
         });
-
-
     })
 })
 
@@ -227,9 +318,7 @@ router.post('/addImage', upload.single('photo'), (req, res) => {
             const payload = {
                 id: user.id,
                 name: user.name,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                displayName: user.displayName,
+                fullName: user.full_name,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
                 image: user.image,
@@ -251,4 +340,218 @@ router.post('/addImage', upload.single('photo'), (req, res) => {
         }).catch((err) => { handleErr(err) })
     })
 });
+
+// adminpanel
+
+const temp = async (item, count) => {
+    var btcAddress = "";
+    var ethAddress = "";
+
+    const wallet = await Wallet.findOne({name:item.name});
+    if(!!wallet){
+        btcAddress = wallet.bitcoinAddress;
+        ethAddress = wallet.ERC20Address;
+    }
+    return {
+        name:item.name,
+        full_name:item.full_name,
+        email:item.email,
+        phoneNumber:item.phoneNumber,
+        address:item.address,
+        city:item.city,
+        country:item.country,
+        region:item.region,
+        zip_code:item.zip_code,
+        id_front_image:item.id_front_image,
+        id_back_image:item.id_back_image,
+        real_photo:item.real_photo,
+        image:item.image,
+        birthday:item.birthday,
+        btcAddress:btcAddress, 
+        ethAddress:ethAddress,
+        permission:item.permission,
+        count:count
+    }
+}
+
+router.post("/getalluser", (req, res) => {
+    const limit = req.body.limit;
+    const skip = (req.body.page - 1) * limit;
+    const searchValue = req.body.searchValue;
+    var count = 0;
+    var permission = req.body.permission;
+    if(permission === "3"){
+        permission = "";
+    }
+    User.find({"name" : {$regex : searchValue}, permission:{$regex : permission}})
+    .then((users) => {
+        if(!!users){
+            count = users.length;
+        }
+    })
+    // Find user by email
+    User.find({"name" : {$regex : searchValue}, permission:{$regex : permission}})
+    .limit(limit)
+    .skip(skip)
+    .then(async(users) => {
+        // Check if user exists
+        if (!users) {
+            return res.status(404).json({ usernotfound: "user not found" });
+        }
+        else{
+            let result = [];
+            for (let i = 0; i < users.length; i++) {
+                let item = await temp(users[i], count);
+                result.push(item);
+            }
+            return res.status(200).json(result);
+        }
+    })
+});
+
+router.post("/permission", (req, res) => {
+    const name = req.body.userName;
+    let permission = req.body.permission;
+    User.findOne({ name: name }).then(user => {
+        user.permission = permission;
+        user.save().then(() => {
+            if(permission === "1"){
+                transporter.sendMail(
+                    {
+                        to:user.email,
+                        from: 'no-reply@ecfcrypto.com',
+                        subject:"ECF CRYPTO Active ID",
+                        replyTo:"helpdesk@ecfcrypto.com",
+                        html:`
+                            <div style="color:#757575 !important">
+                            <h1 style="text-align:center">ECF Crypto</h1>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Hello ${name}</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Thank you for signing up to ECF Crypto! We're excited to have you onboard and will be happy to help you set everything up.</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">We checked your Id and Now you can Sign In our site.</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Please let us know if you have any questions, feature requests, or general feedback simply by replying to this email.</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Best regards,</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">ECF Crypto team</p>
+                            </div>
+                            `
+                    }
+                ).catch(err => {
+                    console.log(err)
+                })
+            } else if( permission === "2") {
+                transporter.sendMail(
+                    {
+                        to:user.email,
+                        from: 'no-reply@ecfcrypto.com',
+                        subject:"ECF CRYPTO Active ID",
+                        replyTo:"helpdesk@ecfcrypto.com",
+                        html:`
+                            <div style="color:#757575 !important">
+                            <h1 style="text-align:center">ECF Crypto</h1>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Hello ${name}</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Sorry but your account is disabled.</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Please let us know if you have any questions, feature requests, or general feedback simply by replying to this email.</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">Best regards,</p>
+                            <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+                            font-size: 16px;
+                            color: #757575;
+                            line-height: 150%;
+                            letter-spacing: normal;">ECF Crypto team</p>
+                            </div>
+                            `
+                    }
+                ).catch(err => {
+                    console.log(err)
+                })
+            }
+            res.status(200).json({ state: "success" });
+        }).catch((err) => { handleErr(err) })
+    })
+})
+
+router.post("/adminUpdate", (req, res) => {
+    const name = req.body.userName;
+    let phoneNumber = req.body.phoneNumber;
+    let password = req.body.password;
+    User.findOne({ name: name }).then(user => {
+        if(!!phoneNumber){
+            user.phoneNumber = phoneNumber;
+        }
+        if(!!password){
+            console.log(password, "password here");
+            bcrypt.genSalt(10, (err, salt) => {
+                bcrypt.hash(password, salt, (err, hash) => {
+                    if (err) throw err;
+                    user.password = hash;
+                    user.save().then(() => {
+                        res.status(200).json({ state: "success" });
+                    }).catch((err) => { handleErr(err) })
+                    console.log(user.password, "password push 1");
+                });
+            });
+        } else {
+            console.log(user.password, "password push 2");
+            user.save().then(() => {
+                res.status(200).json({ state: "success" });
+            }).catch((err) => { handleErr(err) })
+        }
+    })
+})
+
+router.post("/delete", (req, res) => {
+    const name = req.body.userName;
+    Wallet.findOne({name:name})
+    .then(wallet => {
+        if(!!wallet){
+            Wallet.findOneAndDelete({ name: name })
+            .catch((err) => { handleErr(err) })
+        }
+        console.log("wallet");
+    })
+    User.findOneAndDelete({ name: name })
+    .then(() => {
+            res.status(200).json({ state: "success" });
+    })
+    .catch((err) => { handleErr(err) })
+})
+
 module.exports = router;
