@@ -54,6 +54,21 @@ const transporter = nodemailer.createTransport(sendGridTransport(
     })
 );
 
+router.post("/checkusername", (req, res) => {
+    const name = req.body.userName;
+    User.findOne({name:name})
+    .then(user => {
+        if(user){
+            return res.status(401).json({name:"username is already exists"});
+        } else {
+            return res.status(200).json("unique username");
+        }
+    })
+    .catch(() => {
+        return res.status(402).json("database connect error");
+    })
+})
+
 router.post("/register", idUpload, (req, res) => {
     console.log(req.body.address, "req register");
     User.findOne({ name: req.body.userName }).then(user => {
@@ -134,6 +149,9 @@ router.post("/register", idUpload, (req, res) => {
                 });
             });
         }
+    })
+    .catch(() => {
+        res.status(401).json("database connect error");
     });
 });
 // @route POST api/users/login
@@ -512,9 +530,13 @@ router.post("/adminUpdate", (req, res) => {
     const name = req.body.userName;
     let phoneNumber = req.body.phoneNumber;
     let password = req.body.password;
+    let email = req.body.email;
     User.findOne({ name: name }).then(user => {
         if(!!phoneNumber){
             user.phoneNumber = phoneNumber;
+        }
+        if(!!email){
+            user.email = email;
         }
         if(!!password){
             console.log(password, "password here");
