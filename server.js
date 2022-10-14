@@ -1,9 +1,14 @@
 var fs = require('fs');
 var http = require('http');
 var https = require('https');
-var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
-var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
+// var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
+// var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
 
+const privateKey  = fs.readFileSync('sslcert/privatekey.pem');
+const certificate = fs.readFileSync('sslcert/certificate.pem');
+
+
+console.log("___ private ___", certificate);
 var credentials = {key: privateKey, cert: certificate};
 const express = require("express");
 const mongoose = require("mongoose");
