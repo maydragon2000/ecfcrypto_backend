@@ -1,3 +1,10 @@
+var fs = require('fs');
+var http = require('http');
+var https = require('https');
+var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
+var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
+
+var credentials = {key: privateKey, cert: certificate};
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
@@ -21,6 +28,9 @@ const corsOptions = {
     }
 }
 const app = express();
+
+
+
 // Bodyparser middleware
 app.use(
     bodyParser.urlencoded({
@@ -54,5 +64,11 @@ app.use("/api/email", email);
 //     res.sendFile(path.join(__dirname, 'public'))
 // })
 
-const port = process.env.PORT || 5000; // process.env.port is Heroku's port if you choose to deploy the app there
-app.listen(port, "0.0.0.0", () => console.log(`Server up and running on port ${port} !`));
+var httpServer = http.createServer(app);
+var httpsServer = https.createServer(credentials, app);
+
+httpServer.listen(5001);
+httpsServer.listen(5000);
+
+// const port = process.env.PORT || 5000; // process.env.port is Heroku's port if you choose to deploy the app there
+// app.listen(port, "0.0.0.0", () => console.log(`Server up and running on port ${port} !`));
