@@ -1,3 +1,15 @@
+var fs = require('fs');
+var http = require('http');
+var https = require('https');
+var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
+var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
+
+// const privateKey  = fs.readFileSync('sslcert/privatekey.pem');
+// const certificate = fs.readFileSync('sslcert/certificate.pem');
+
+
+console.log("___ private ___", certificate);
+var credentials = {key: privateKey, cert: certificate};
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
@@ -53,10 +65,19 @@ app.use("/api/users", users);
 app.use("/api/cryptocurrency", cryptoCurrency);
 app.use("/api/wallet", wallet);
 app.use("/api/email", email);
-app.use('/static', express.static(path.join(__dirname, '../Frontend/build/static')));
+app.use('/static', express.static(path.join(__dirname, '../ecfcrypto/build/static')));
 app.get('*', function(req, res) {
-  res.sendFile('index.html', {root: path.join(__dirname, '../Frontend/build/')});
+  res.sendFile('index.html', {root: path.join(__dirname, '../ecfcrypto/build/')});
 });
+// app.use("*", (req, res) => {
+//     res.sendFile(path.join(__dirname, 'public'))
+// })
 
-const port = process.env.PORT || 5000; // process.env.port is Heroku's port if you choose to deploy the app there
-app.listen(port, "0.0.0.0", () => console.log(`Server up and running on port ${port} !`));
+var httpServer = http.createServer(app);
+var httpsServer = https.createServer(credentials, app);
+
+httpServer.listen(5001);
+httpsServer.listen(5000);
+
+// const port = process.env.PORT || 5000; // process.env.port is Heroku's port if you choose to deploy the app there
+// app.listen(port, "0.0.0.0", () => console.log(`Server up and running on port ${port} !`));
