@@ -7,9 +7,10 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 let path = require('path');
 const fs = require('fs');
-const nodemailer = require('nodemailer')
-const sendGridTransport = require('nodemailer-sendgrid-transport');
-const {SENDGRID_API} = require('../../config/keys');
+const mailgun = require("mailgun-js");
+const DOMAIN = "ecfcrypto.com";
+const { api_key } = require("../../config/keys");
+const mg = mailgun({ apiKey: api_key, domain: DOMAIN, host: "api.eu.mailgun.net", });
 // Load User model
 const User = require("../../models/user");
 const Wallet = require("../../models/wallet")
@@ -46,13 +47,6 @@ let upload = multer({ storage, fileFilter });
 
 const idUpload = upload.fields([{name:'idFrontImage', maxCount:1}, {name:'idBackImage', maxCount:1}, {name:'realPhoto', maxCount:1}])
 
-const transporter = nodemailer.createTransport(sendGridTransport(
-    {
-        auth:{
-            api_key:SENDGRID_API
-        }
-    })
-);
 
 router.post("/checkusername", (req, res) => {
     const name = req.body.userName;
@@ -93,14 +87,13 @@ router.post("/register", idUpload, (req, res) => {
                 real_photo: req.files.realPhoto[0].filename,
                 permission:"0"
             });
-            transporter.sendMail(
-                {
-                    to:"helpdesk@ecfcrypto.com",
-                    from: 'no-reply@ecfcrypto.com',
-                    subject:"ECF CRYPTO New User",
-                    replyTo:"no-reply@ecfcrypto.com",
-                    html:`
-                    <div style="color:#757575 !important">
+            const data = {
+                from: "no-reply@ecfcrypto.com",
+                to: "helpdesk@ecfcrypto.com",
+                subject: "ECF CRYPTO Confirm Email",
+                replyTo:"helpdesk@ecfcrypto.com",
+                html:`
+                <div style="color:#757575 !important">
                     <h1 style="text-align:center">ECF Crypto</h1>
                     <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
                     font-size: 16px;
@@ -132,11 +125,12 @@ router.post("/register", idUpload, (req, res) => {
                     line-height: 150%;
                     letter-spacing: normal;">ECF Crypto team</p>
                     </div>
-                    `
-                }
-            ).catch(err => {
-                console.log(err)
-            })
+                `
+              };
+              mg.messages().send(data, function (error, body) {
+                console.log(body, "body");
+                console.log(error, "error");
+              });
             // Hash password before saving in database
             bcrypt.genSalt(10, (err, salt) => {
                 bcrypt.hash(newUser.password, salt, (err, hash) => {
@@ -165,7 +159,6 @@ router.post("/login", (req, res) => {
         return res
             .status(201)
             .json({ admin: "admin" });
-
     }
     // Find user by email
     User.findOne({ name: name }).then(user => {
@@ -434,14 +427,13 @@ router.post("/permission", (req, res) => {
         user.permission = permission;
         user.save().then(() => {
             if(permission === "1"){
-                transporter.sendMail(
-                    {
-                        to:user.email,
-                        from: 'no-reply@ecfcrypto.com',
-                        subject:"ECF CRYPTO Active ID",
-                        replyTo:"helpdesk@ecfcrypto.com",
-                        html:`
-                            <div style="color:#757575 !important">
+                const data = {
+                    from: "no-reply@ecfcrypto.com",
+                    to: user.email,
+                    subject: "ECF CRYPTO Active ID",
+                    replyTo:"helpdesk@ecfcrypto.com",
+                    html:`
+                    <div style="color:#757575 !important">
                             <h1 style="text-align:center">ECF Crypto</h1>
                             <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
                             font-size: 16px;
@@ -474,20 +466,20 @@ router.post("/permission", (req, res) => {
                             line-height: 150%;
                             letter-spacing: normal;">ECF Crypto team</p>
                             </div>
-                            `
-                    }
-                ).catch(err => {
-                    console.log(err)
-                })
+                    `
+                };
+                mg.messages().send(data, function (error, body) {
+                    console.log(body, "body");
+                    console.log(error, "error");
+                });       
             } else if( permission === "2") {
-                transporter.sendMail(
-                    {
-                        to:user.email,
-                        from: 'no-reply@ecfcrypto.com',
-                        subject:"ECF CRYPTO Active ID",
-                        replyTo:"helpdesk@ecfcrypto.com",
-                        html:`
-                            <div style="color:#757575 !important">
+                const data = {
+                    from: "no-reply@ecfcrypto.com",
+                    to: user.email,
+                    subject: "ECF CRYPTO Active ID",
+                    replyTo:"helpdesk@ecfcrypto.com",
+                    html:`
+                    <div style="color:#757575 !important">
                             <h1 style="text-align:center">ECF Crypto</h1>
                             <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
                             font-size: 16px;
@@ -515,11 +507,12 @@ router.post("/permission", (req, res) => {
                             line-height: 150%;
                             letter-spacing: normal;">ECF Crypto team</p>
                             </div>
-                            `
-                    }
-                ).catch(err => {
-                    console.log(err)
-                })
+                    `
+                  };
+                  mg.messages().send(data, function (error, body) {
+                    console.log(body, "body");
+                    console.log(error, "error");
+                  });
             }
             res.status(200).json({ state: "success" });
         }).catch((err) => { handleErr(err) })
