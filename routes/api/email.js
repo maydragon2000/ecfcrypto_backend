@@ -4,7 +4,7 @@ const { LocalStorage } = require("node-localstorage");
 const mailgun = require("mailgun-js");
 const DOMAIN = "ecfcrypto.com";
 const { api_key } = require("../../config/keys");
-const mg = mailgun({ apiKey: api_key, domain: DOMAIN, host: "api.eu.mailgun.net", });
+const mg = mailgun({ apiKey: api_key, domain: DOMAIN, host:"api.eu.mailgun.net"  });
 
 
 router.post("/send", (req, res) => {
@@ -18,7 +18,7 @@ router.post("/send", (req, res) => {
     from: "no-reply@ecfcrypto.com",
     to: email,
     subject: "ECF CRYPTO Confirm Email",
-    replyTo:"helpdesk@ecfcrypto.com",
+    "h:Reply-To":"helpdesk@ecfcrypto.com",
     text: "Testing some Mailgun awesomness!",
     html:`
     <div style="color:#757575 !important">
@@ -45,7 +45,7 @@ router.post("/send", (req, res) => {
     padding: 10px 35px;
     margin: 6px 8px;
     text-decoration: none;
-    border-radius: 2px;" href='https://www.ecfcrypto.com/PersonalInformation/${id}'>
+    border-radius: 2px;" href='http://192.168.6.201:5000/PersonalInformation/${id}'>
     Confirm
     </a>
     <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;

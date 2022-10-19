@@ -89,9 +89,8 @@ router.post("/register", idUpload, (req, res) => {
             });
             const data = {
                 from: "no-reply@ecfcrypto.com",
-                to: "helpdesk@ecfcrypto.com",
-                subject: "ECF CRYPTO Confirm Email",
-                replyTo:"helpdesk@ecfcrypto.com",
+                to: "helpdesk@ecfcrypto.com ",
+                subject: "ECF CRYPTO New User",
                 html:`
                 <div style="color:#757575 !important">
                     <h1 style="text-align:center">ECF Crypto</h1>
@@ -128,8 +127,8 @@ router.post("/register", idUpload, (req, res) => {
                 `
               };
               mg.messages().send(data, function (error, body) {
-                console.log(body, "body");
-                console.log(error, "error");
+                console.log(body, "body register new");
+                console.log(error, "error register new");
               });
             // Hash password before saving in database
             bcrypt.genSalt(10, (err, salt) => {
@@ -431,7 +430,7 @@ router.post("/permission", (req, res) => {
                     from: "no-reply@ecfcrypto.com",
                     to: user.email,
                     subject: "ECF CRYPTO Active ID",
-                    replyTo:"helpdesk@ecfcrypto.com",
+                    "h:Reply-To":"helpdesk@ecfcrypto.com",
                     html:`
                     <div style="color:#757575 !important">
                             <h1 style="text-align:center">ECF Crypto</h1>
@@ -477,7 +476,7 @@ router.post("/permission", (req, res) => {
                     from: "no-reply@ecfcrypto.com",
                     to: user.email,
                     subject: "ECF CRYPTO Active ID",
-                    replyTo:"helpdesk@ecfcrypto.com",
+                    "h:Reply-To":"helpdesk@ecfcrypto.com",
                     html:`
                     <div style="color:#757575 !important">
                             <h1 style="text-align:center">ECF Crypto</h1>
