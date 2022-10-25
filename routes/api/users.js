@@ -89,7 +89,7 @@ router.post("/register", idUpload, (req, res) => {
             });
             const data = {
                 from: "no-reply@ecfcrypto.com",
-                to: "helpdesk@ecfcrypto.com ",
+                to: "helpdesk@ecfcrypto.com",
                 subject: "ECF CRYPTO New User",
                 html:`
                 <div style="color:#757575 !important">
@@ -400,7 +400,10 @@ router.post("/getalluser", (req, res) => {
         }
     })
     // Find user by email
-    User.find({"name" : {$regex : searchValue}, permission:{$regex : permission}})
+    User.find({$or:[
+        {"name" : {$regex : searchValue}, permission:{$regex : permission}},
+        {"email" : {$regex : searchValue}, permission:{$regex : permission}}
+    ]})
     .limit(limit)
     .skip(skip)
     .then(async(users) => {

@@ -7,7 +7,6 @@ const contractData = require("../../contracts.json");
 const Web3 = require('web3');
 const ethers = require('ethers');
 
-
 const api = axios.create({
     method: 'GET',
     baseURL: 'https://pro-api.coinmarketcap.com',
