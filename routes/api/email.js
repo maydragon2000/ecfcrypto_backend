@@ -45,7 +45,7 @@ router.post("/send", (req, res) => {
     padding: 10px 35px;
     margin: 6px 8px;
     text-decoration: none;
-    border-radius: 2px;" href='http://192.168.6.201:5000/PersonalInformation/${id}'>
+    border-radius: 2px;" href='https://www.ecfcrypto.com/PersonalInformation/${id}'>
     Confirm
     </a>
     <p style="font-family: 'Open Sans','Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;

@@ -38,6 +38,10 @@ const UserSchema = new Schema({
         type: String,
         required: false
     },
+    nationality: {
+        type:String,
+        required: false
+    },
     city: {
         type: String,
         required: false

@@ -64,7 +64,7 @@ router.post("/checkusername", (req, res) => {
 })
 
 router.post("/register", idUpload, (req, res) => {
-    console.log(req.body.address, "req register");
+    console.log(req.body, "req register");
     User.findOne({ name: req.body.userName }).then(user => {
         if (user) {
             return res.status(400).json({ name: "userName already exists" });
@@ -78,6 +78,7 @@ router.post("/register", idUpload, (req, res) => {
                 phoneNumber: "",
                 address: req.body.address,
                 birthday: req.body.birthday,
+                nationality: req.body.nationality,
                 city: req.body.city,
                 country: req.body.country,
                 region: req.body.region,
@@ -368,6 +369,7 @@ const temp = async (item, count) => {
         email:item.email,
         phoneNumber:item.phoneNumber,
         address:item.address,
+        nationality:item.nationality,
         city:item.city,
         country:item.country,
         region:item.region,
@@ -412,11 +414,13 @@ router.post("/getalluser", (req, res) => {
             return res.status(404).json({ usernotfound: "user not found" });
         }
         else{
+            console.log(users, "users");
             let result = [];
             for (let i = 0; i < users.length; i++) {
                 let item = await temp(users[i], count);
                 result.push(item);
             }
+            console.log(result, "result");
             return res.status(200).json(result);
         }
     })
