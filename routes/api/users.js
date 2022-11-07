@@ -50,12 +50,23 @@ const idUpload = upload.fields([{name:'idFrontImage', maxCount:1}, {name:'idBack
 
 router.post("/checkusername", (req, res) => {
     const name = req.body.userName;
+    const email = req.body.email;
     User.findOne({name:name})
     .then(user => {
         if(user){
             return res.status(401).json({name:"username is already exists"});
         } else {
-            return res.status(200).json("unique username");
+            User.findOne({email:email})
+            .then((user) => {
+                if(user){
+                    return res.status(403).json('email is already exists');
+                } else {
+                    return res.status(200).json("unique username");
+                }
+            })
+            .catch(() => {
+                return res.status(402).json("database connect error");
+            })
         }
     })
     .catch(() => {
