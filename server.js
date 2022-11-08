@@ -59,17 +59,17 @@ app.use("/api/users", users);
 app.use("/api/cryptocurrency", cryptoCurrency);
 app.use("/api/wallet", wallet);
 app.use("/api/email", email);
-// app.use("/static", express.static(path.join(__dirname, "../ecfcrypto/build/static"))
-// );
+app.use("/static", express.static(path.join(__dirname, "../ecfcrypto/build/static"))
+);
 
-// app.use("/image", express.static(path.join(__dirname, "../ecfcrypto/build/image"))
-// );
+app.use("/image", express.static(path.join(__dirname, "../ecfcrypto/build/image"))
+);
 
-// app.get("*", function (req, res) {
-//   res.sendFile("index.html", {
-//     root: path.join(__dirname, "../ecfcrypto/build/"),
-//   });
-// });
+app.get("*", function (req, res) {
+  res.sendFile("index.html", {
+    root: path.join(__dirname, "../ecfcrypto/build/"),
+  });
+});
 // app.use("*", (req, res) => {
 //     res.sendFile(path.join(__dirname, 'public'))
 // })
