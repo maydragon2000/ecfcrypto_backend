@@ -265,40 +265,51 @@ router.post("/resetPassword", (req, res) => {
 })
 router.post("/resetuser", (req, res) => {
     const name = req.body.userName;
-    User.findOne({ name: name }).then(user => {
-        user.full_name = req.body.fullName;
-        user.city = req.body.city;
-        user.country = req.body.country;
-        user.email = req.body.email;
-        user.phoneNumber = req.body.phoneNumber;
-        user.save().then(() => {
-            const payload = {
-                id: user.id,
-                name: user.name,
-                fullName: user.full_name,
-                city: user.city,
-                country: user.country,
-                email: user.email,
-                phoneNumber: user.phoneNumber,
-                image: user.image,
-                date: user.date,
-            };
-            // Sign token
-            jwt.sign(
-                payload,
-                keys.secretOrKey,
-                {
-                    expiresIn: 31556926 // 1 year in seconds
-                },
-                (err, token) => {
-                    res.json({
-                        success: true,
-                        token: "Bearer " + token
-                    });
-                }
-            );
-        }).catch((err) => { handleErr(err) })
+    const email = req.body.email;
+    User.findOne({email:email}).then(user => {
+        if(user && user.name !== name) {
+            res.status(401).json("email already exit");
+        } else {
+            User.findOne({ name: name }).then(user => {
+                user.full_name = req.body.fullName;
+                user.city = req.body.city;
+                user.country = req.body.country;
+                user.email = req.body.email;
+                user.phoneNumber = req.body.phoneNumber;
+                user.save().then(() => {
+                    const payload = {
+                        id: user.id,
+                        name: user.name,
+                        fullName: user.full_name,
+                        city: user.city,
+                        country: user.country,
+                        email: user.email,
+                        phoneNumber: user.phoneNumber,
+                        image: user.image,
+                        date: user.date,
+                    };
+                    // Sign token
+                    jwt.sign(
+                        payload,
+                        keys.secretOrKey,
+                        {
+                            expiresIn: 31556926 // 1 year in seconds
+                        },
+                        (err, token) => {
+                            res.json({
+                                success: true,
+                                token: "Bearer " + token
+                            });
+                        }
+                    );
+                }).catch((err) => { handleErr(err) })
+            })
+        }
     })
+    .catch((err) => {
+        res.status(402).json("server error");
+    })
+    
 })
 
 router.post("/changePassword", (req, res) => {
